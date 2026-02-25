@@ -190,7 +190,7 @@ def main():
     class_map = {name: idx for idx, name in enumerate(class_names)}
     print(f"\nClass mapping: {class_map}")
 
-    print("\n✅ Data setup complete! Ready for training.")
+    print("\nData setup complete. Ready for training.")
 
 
 if __name__ == "__main__":
