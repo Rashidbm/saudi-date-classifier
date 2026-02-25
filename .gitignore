@@ -1,0 +1,39 @@
+# Data (too large for GitHub - download from Kaggle)
+data/raw/
+data/*.csv
+
+# Model outputs
+outputs/
+*.pth
+*.pt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log

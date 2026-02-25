@@ -1,0 +1,51 @@
+data:
+  raw_dir: data/raw
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+  splits: [0.70, 0.15, 0.15]  # train, val, test
+  seed: 42
+
+classes:
+  - Ajwa
+  - Galaxy
+  - Medjool
+  - Meneifi
+  - Nabtat Ali
+  - Rutab
+  - Shaishe
+  - Sokari
+  - Sugaey
+
+models:
+  efficientnet:
+    name: efficientnet_b0
+    pretrained: true
+    dropout: 0.3
+  vit:
+    name: google/vit-base-patch16-224-in21k
+    pretrained: true
+    dropout: 0.1
+  resnet:
+    name: resnet50
+    pretrained: true
+    dropout: 0.3
+
+training:
+  epochs_phase1: 10
+  epochs_phase2: 20
+  lr_phase1: 1.0e-3
+  lr_phase2: 1.0e-5
+  weight_decay: 1.0e-4
+  early_stopping_patience: 5
+  seed: 42
+
+augmentation:
+  horizontal_flip: 0.5
+  vertical_flip: 0.3
+  rotation_limit: 30
+  color_jitter_brightness: 0.3
+  color_jitter_contrast: 0.3
+  color_jitter_saturation: 0.3
+  color_jitter_hue: 0.1
+  gaussian_noise_var_limit: [10.0, 50.0]
