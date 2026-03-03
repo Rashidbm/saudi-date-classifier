@@ -1,5 +1,6 @@
-# Data (too large for GitHub - download from Kaggle)
-data/raw/
+# Data (download from Kaggle)
+data/raw/*
+!data/raw/.gitkeep
 data/*.csv
 
 # Model outputs
