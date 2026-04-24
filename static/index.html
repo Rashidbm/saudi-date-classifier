@@ -1,0 +1,2252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0B0C29" />
+<title>Saudi Date Variety Classifier</title>
+<meta name="description" content="Identify nine Saudi date varieties with a deep-learning ensemble (ResNet + EfficientNet + Vision Transformer). Includes Grad-CAM explanations and heritage information." />
+<meta property="og:title" content="Saudi Date Variety Classifier" />
+<meta property="og:description" content="Identify nine Saudi date varieties with a deep-learning ensemble. 90.4% accuracy." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%23D4A574'/%3E%3C/svg%3E" />
+<style>
+  /* Thmanyah fonts for Arabic */
+  @font-face {
+    font-family: 'ThmanyahSans';
+    src: url('/static/fonts/thmanyahsans-Light.woff2') format('woff2');
+    font-weight: 300; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ThmanyahSans';
+    src: url('/static/fonts/thmanyahsans-Regular.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ThmanyahSans';
+    src: url('/static/fonts/thmanyahsans-Medium.woff2') format('woff2');
+    font-weight: 500; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ThmanyahSans';
+    src: url('/static/fonts/thmanyahsans-Bold.woff2') format('woff2');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ThmanyahSans';
+    src: url('/static/fonts/thmanyahsans-Black.woff2') format('woff2');
+    font-weight: 900; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ThmanyahSerif';
+    src: url('/static/fonts/thmanyahserifdisplay-Regular.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ThmanyahSerif';
+    src: url('/static/fonts/thmanyahserifdisplay-Medium.woff2') format('woff2');
+    font-weight: 500; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ThmanyahSerif';
+    src: url('/static/fonts/thmanyahserifdisplay-Bold.woff2') format('woff2');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'ThmanyahSerif';
+    src: url('/static/fonts/thmanyahserifdisplay-Black.woff2') format('woff2');
+    font-weight: 900; font-style: normal; font-display: swap;
+  }
+
+  :root {
+    --sky-top: #0B0C29;
+    --sky-mid: #1A1248;
+    --sky-low: #38194A;
+    --horizon: #3D1F0E;
+    --desert: #1C0F07;
+    --gold: #E2B873;
+    --gold-bright: #F5C16C;
+    --gold-deep: #B98846;
+    --amber: #D4873E;
+    --cream: #F5E9D7;
+    --cream-muted: #D4C3A8;
+    --stone: #A8937A;
+    --stone-dim: #6E5F4A;
+    --ink: #09081B;
+    --ink-soft: #12132F;
+    --glass-bg: rgba(23, 14, 50, 0.55);
+    --glass-border: rgba(226, 184, 115, 0.18);
+    --glass-border-strong: rgba(226, 184, 115, 0.35);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --shadow-gold: 0 10px 40px -10px rgba(226, 184, 115, 0.25);
+    --shadow-deep: 0 20px 50px -20px rgba(0, 0, 0, 0.6);
+    --transition: all 240ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { color-scheme: dark; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--cream);
+    background: var(--ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Arabic language mode: switch fonts and text direction */
+  body.lang-ar {
+    direction: rtl;
+    font-family: 'ThmanyahSans', system-ui, sans-serif;
+  }
+  body.lang-ar .hero__title,
+  body.lang-ar .section__title,
+  body.lang-ar .model-card__name,
+  body.lang-ar .heritage__name,
+  body.lang-ar .nav__brand {
+    font-family: 'ThmanyahSerif', Georgia, serif;
+  }
+  body.lang-ar .hero__title em,
+  body.lang-ar .section__title em {
+    font-style: normal;
+  }
+  body.lang-ar .hero__eyebrow {
+    letter-spacing: 0.05em;
+    text-transform: none;
+  }
+  body.lang-ar .section__eyebrow,
+  body.lang-ar .panel__label,
+  body.lang-ar .stat__label,
+  body.lang-ar .model-card__badge,
+  body.lang-ar .model-card__acc-label,
+  body.lang-ar .nav__links a {
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+  body.lang-ar .hero__moon {
+    right: auto;
+    left: 12%;
+  }
+  /* Keep LTR sections for inline latin text where it reads better */
+  body.lang-ar .conf-row__name,
+  body.lang-ar .conf-row__pct,
+  body.lang-ar .stat__value,
+  body.lang-ar .model-card__acc-value,
+  body.lang-ar .ensemble-banner__acc,
+  body.lang-ar .result__arabic {
+    direction: ltr;
+  }
+  body.lang-ar .result__arabic { direction: rtl; }
+  body.lang-ar .footer__attribution,
+  body.lang-ar .dropzone__hint {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  /* Flip arrow icons in RTL */
+  body.lang-ar .btn svg { transform: scaleX(-1); }
+  img { max-width: 100%; height: auto; display: block; }
+  a {
+    color: var(--gold);
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  a:hover, a:focus-visible { color: var(--gold-bright); }
+
+  /* --- Nav --- */
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    background: linear-gradient(180deg, rgba(11, 12, 41, 0.8) 0%, rgba(11, 12, 41, 0.0) 100%);
+    transition: var(--transition);
+  }
+  .nav__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--cream);
+  }
+  .nav__brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--gold-bright), var(--gold-deep));
+    box-shadow: 0 0 18px rgba(245, 193, 108, 0.45);
+  }
+  .nav__links {
+    display: flex;
+    gap: 1.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .nav__links a {
+    font-size: 0.875rem;
+    color: var(--cream-muted);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .nav__links a:hover, .nav__links a:focus-visible { color: var(--gold); }
+  @media (max-width: 640px) { .nav__links { display: none; } }
+
+  /* Hero GitHub link */
+  .hero__github {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.5rem;
+    color: var(--stone);
+    opacity: 0.55;
+    transition: var(--transition);
+    width: 32px;
+    height: 32px;
+  }
+  .hero__github:hover,
+  .hero__github:focus-visible {
+    color: var(--gold);
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+
+  /* Language switcher */
+  .lang-switch {
+    display: inline-flex;
+    padding: 3px;
+    background: rgba(11, 12, 41, 0.5);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    margin-left: 1rem;
+  }
+  body.lang-ar .lang-switch { margin-left: 0; margin-right: 1rem; }
+  .lang-switch__btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--cream-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 42px;
+  }
+  .lang-switch__btn[aria-pressed="true"] {
+    background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+    color: var(--ink);
+  }
+  .lang-switch__btn:hover:not([aria-pressed="true"]) { color: var(--gold); }
+  .lang-switch__btn.ar { font-family: 'ThmanyahSans', sans-serif; font-size: 0.95rem; }
+
+  /* --- Hero --- */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 6rem 1.25rem 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: linear-gradient(
+      180deg,
+      var(--sky-top) 0%,
+      var(--sky-mid) 30%,
+      var(--sky-low) 58%,
+      var(--horizon) 82%,
+      var(--desert) 100%
+    );
+  }
+  .hero__stars {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+  }
+  .hero__star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0.7;
+    box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.4);
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  .hero__star--lg { width: 3px; height: 3px; opacity: 0.9; }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__star { animation: none; opacity: 0.7; }
+  }
+  .hero__moon {
+    position: absolute;
+    top: 14%;
+    right: 12%;
+    width: clamp(60px, 10vw, 100px);
+    height: clamp(60px, 10vw, 100px);
+    z-index: -1;
+    filter: drop-shadow(0 0 30px rgba(245, 193, 108, 0.55));
+  }
+  .hero__haze {
+    position: absolute;
+    bottom: 12%;
+    left: 0;
+    right: 0;
+    height: 30%;
+    z-index: -1;
+    background: radial-gradient(ellipse at center bottom, rgba(212, 135, 62, 0.35) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero__palms {
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 40vh;
+    max-height: 380px;
+    min-height: 220px;
+    pointer-events: none;
+    color: #0A0810;
+  }
+  .hero__palm {
+    display: block;
+    filter: drop-shadow(0 -2px 12px rgba(0, 0, 0, 0.4));
+  }
+  .hero__palm--1 { width: 170px; height: 320px; transform: translateY(6%); }
+  .hero__palm--2 { width: 210px; height: 360px; }
+  .hero__palm--3 { width: 150px; height: 300px; transform: translateY(8%) scaleX(-1); }
+  .hero__palm--4 { width: 190px; height: 340px; transform: translateY(4%); }
+  @media (max-width: 768px) {
+    .hero__palm--1 { width: 120px; height: 220px; }
+    .hero__palm--2 { width: 140px; height: 240px; }
+    .hero__palm--3 { width: 110px; height: 200px; }
+    .hero__palm--4 { display: none; }
+  }
+  .hero__horizon {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(212, 135, 62, 0.5), rgba(226, 184, 115, 0.3), transparent);
+    z-index: -1;
+  }
+
+  .hero__content {
+    max-width: 780px;
+    width: 100%;
+    padding-bottom: 6rem;
+    animation: fadeUp 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__content { animation: none; }
+  }
+  .hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 999px;
+    background: rgba(11, 12, 41, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .hero__eyebrow::before,
+  .hero__eyebrow::after {
+    content: "";
+    width: 18px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold));
+  }
+  .hero__eyebrow::after {
+    background: linear-gradient(270deg, transparent, var(--gold));
+  }
+  .hero__title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    margin: 1.5rem 0 1.25rem;
+    color: var(--cream);
+  }
+  .hero__title em {
+    font-style: italic;
+    font-weight: 500;
+    background: linear-gradient(135deg, var(--gold-bright), var(--amber));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero__subtitle {
+    font-size: clamp(1rem, 1.8vw, 1.1875rem);
+    line-height: 1.65;
+    color: var(--cream-muted);
+    max-width: 620px;
+    margin: 0 auto 2.25rem;
+    font-weight: 300;
+  }
+  .hero__actions {
+    display: flex;
+    gap: 0.875rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.9rem 1.75rem;
+    min-height: 48px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+  }
+  .btn--primary {
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold-deep));
+    color: var(--ink);
+    box-shadow: var(--shadow-gold);
+  }
+  .btn--primary:hover, .btn--primary:focus-visible {
+    transform: translateY(-2px);
+    color: var(--ink);
+    box-shadow: 0 14px 44px -10px rgba(226, 184, 115, 0.5);
+  }
+  .btn--ghost {
+    background: transparent;
+    color: var(--cream);
+    border-color: var(--glass-border-strong);
+  }
+  .btn--ghost:hover, .btn--ghost:focus-visible {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(226, 184, 115, 0.06);
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 3px;
+  }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* --- Sections --- */
+  .section {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 5rem 1.25rem;
+    position: relative;
+  }
+  .section--narrow { max-width: 960px; }
+  .section__head { text-align: center; margin-bottom: 3rem; }
+  .section__eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.875rem;
+    display: inline-block;
+  }
+  .section__title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.875rem, 4vw, 2.75rem);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.875rem;
+    color: var(--cream);
+  }
+  .section__title em {
+    font-style: italic;
+    color: var(--gold-bright);
+  }
+  .section__subtitle {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--cream-muted);
+    max-width: 620px;
+    margin: 0 auto;
+    font-weight: 300;
+  }
+
+  /* --- Stats strip --- */
+  .stats {
+    max-width: 900px;
+    margin: -3rem auto 0;
+    padding: 0 1.25rem;
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  .stat {
+    background: linear-gradient(135deg, rgba(23, 14, 50, 0.85), rgba(11, 12, 41, 0.85));
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    box-shadow: var(--shadow-deep);
+    transition: var(--transition);
+  }
+  .stat:hover {
+    transform: translateY(-3px);
+    border-color: var(--gold-deep);
+    box-shadow: 0 24px 60px -20px rgba(226, 184, 115, 0.25), var(--shadow-deep);
+  }
+  .stat__value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 5vw, 2.875rem);
+    font-weight: 600;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--gold-bright), var(--amber));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat__value sup {
+    font-size: 0.55em;
+    font-weight: 500;
+    margin-left: 0.05em;
+    vertical-align: super;
+  }
+  .stat__label {
+    font-size: 0.75rem;
+    color: var(--cream-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: -2.5rem; }
+    .stat { padding: 1rem 0.5rem; border-radius: var(--radius-md); }
+  }
+
+  /* --- Classify section --- */
+  .classify-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .classify-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: linear-gradient(135deg, rgba(23, 14, 50, 0.75), rgba(11, 12, 41, 0.8));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-deep);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .panel__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin: 0 0 1rem;
+  }
+
+  /* Dropzone */
+  .dropzone {
+    position: relative;
+    border: 2px dashed var(--glass-border-strong);
+    border-radius: var(--radius-md);
+    padding: 2.25rem 1.25rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background: rgba(9, 8, 27, 0.3);
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .dropzone:hover,
+  .dropzone--active {
+    border-color: var(--gold);
+    background: rgba(226, 184, 115, 0.06);
+    box-shadow: inset 0 0 40px rgba(226, 184, 115, 0.08);
+  }
+  .dropzone__icon {
+    width: 48px;
+    height: 48px;
+    color: var(--gold);
+    margin-bottom: 1rem;
+    opacity: 0.85;
+  }
+  .dropzone__title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.375rem;
+    font-weight: 500;
+    color: var(--cream);
+    margin: 0 0 0.375rem;
+  }
+  .dropzone__hint {
+    font-size: 0.875rem;
+    color: var(--stone);
+    margin: 0;
+  }
+  .dropzone__input { display: none; }
+  .dropzone__preview {
+    display: none;
+    max-height: 340px;
+    border-radius: var(--radius-sm);
+    object-fit: contain;
+  }
+  .dropzone--has-preview {
+    padding: 0.75rem;
+    min-height: auto;
+  }
+  .dropzone--has-preview .dropzone__content { display: none; }
+  .dropzone--has-preview .dropzone__preview { display: block; margin: 0 auto; }
+  .dropzone--has-preview .dropzone__replace {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--gold);
+    font-weight: 500;
+  }
+  .dropzone__replace { display: none; }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    margin-top: 1.25rem;
+  }
+  .field { display: flex; flex-direction: column; gap: 0.375rem; }
+  .field__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cream-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-sm);
+    background: rgba(9, 8, 27, 0.5);
+    color: var(--cream);
+    font-family: inherit;
+    font-size: 0.9375rem;
+    min-height: 44px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E2B873' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 16px 16px;
+    transition: var(--transition);
+  }
+  .select:hover, .select:focus {
+    border-color: var(--gold);
+    outline: none;
+  }
+  .field__hint {
+    font-size: 0.8125rem;
+    color: var(--stone);
+    line-height: 1.45;
+  }
+
+  /* Result card */
+  .result {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-height: 100%;
+  }
+  .result--empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 420px;
+    color: var(--stone);
+  }
+  .result__empty-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(226, 184, 115, 0.08);
+    border: 1px solid var(--glass-border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    margin: 0 auto 1rem;
+  }
+  .result__empty-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    color: var(--cream);
+    margin: 0 0 0.375rem;
+    font-weight: 500;
+  }
+  .result__empty-text {
+    font-size: 0.9375rem;
+    color: var(--stone);
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  .result__header {
+    text-align: center;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .result__top-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin: 0 0 0.625rem;
+  }
+  .result__variety {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--cream);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .result__arabic {
+    font-family: 'ThmanyahSerif', 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    color: var(--gold-bright);
+    margin: 0.25rem 0 0;
+    direction: rtl;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+  .result__confidence {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .result__confidence-text {
+    font-size: 0.9375rem;
+    color: var(--cream-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .result__confidence-text strong {
+    color: var(--gold-bright);
+    font-weight: 600;
+    font-size: 1.0625rem;
+  }
+  .result__bar {
+    width: min(280px, 100%);
+    height: 6px;
+    background: rgba(226, 184, 115, 0.12);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .result__bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-bright), var(--amber));
+    border-radius: 999px;
+    transition: width 520ms cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 0 12px rgba(245, 193, 108, 0.4);
+  }
+
+  .conf-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+  .conf-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 0.875rem;
+    align-items: center;
+    font-size: 0.875rem;
+  }
+  .conf-row__name { color: var(--cream-muted); font-weight: 500; }
+  .conf-row__bar {
+    height: 4px;
+    background: rgba(226, 184, 115, 0.1);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .conf-row__bar > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+    border-radius: 999px;
+    transition: width 420ms ease-out;
+  }
+  .conf-row--top .conf-row__name { color: var(--cream); }
+  .conf-row--top .conf-row__bar > div {
+    background: linear-gradient(90deg, var(--gold-bright), var(--amber));
+  }
+  .conf-row__pct {
+    font-size: 0.8125rem;
+    color: var(--stone);
+    font-variant-numeric: tabular-nums;
+    min-width: 3.5ch;
+    text-align: right;
+  }
+  .conf-row--top .conf-row__pct { color: var(--gold-bright); font-weight: 600; }
+
+  /* Grad-CAM + Heritage row */
+  .explain-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 860px) {
+    .explain-grid { grid-template-columns: 1fr; }
+  }
+
+  .gradcam {
+    display: none;
+  }
+  .gradcam--shown { display: block; }
+  .gradcam__image {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+  }
+  .gradcam__caption {
+    margin-top: 0.875rem;
+    font-size: 0.8125rem;
+    color: var(--stone);
+    line-height: 1.55;
+    padding: 0.75rem 1rem;
+    background: rgba(226, 184, 115, 0.05);
+    border-left: 2px solid var(--gold-deep);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .heritage {
+    display: none;
+    border-left: 3px solid var(--gold);
+  }
+  .heritage--shown { display: block; }
+  .heritage__name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.625rem;
+    font-weight: 600;
+    color: var(--gold-bright);
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.01em;
+  }
+  .heritage__row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem 1rem;
+    padding: 0.625rem 0;
+    border-bottom: 1px dashed var(--glass-border);
+  }
+  .heritage__row:last-child { border-bottom: none; }
+  .heritage__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding-top: 2px;
+    min-width: 100px;
+  }
+  .heritage__value {
+    font-size: 0.9375rem;
+    color: var(--cream-muted);
+    line-height: 1.55;
+  }
+
+  /* --- Season strip --- */
+  .season {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--glass-border);
+  }
+  .season__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .season__title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  body.lang-ar .season__title { letter-spacing: 0.04em; text-transform: none; }
+  .season__range {
+    font-size: 0.8125rem;
+    color: var(--cream-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .season__strip {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 3px;
+    margin-bottom: 0.5rem;
+  }
+  .season__month {
+    position: relative;
+    height: 26px;
+    background: rgba(226, 184, 115, 0.06);
+    border-radius: 6px;
+    transition: var(--transition);
+  }
+  .season__month--active {
+    background: linear-gradient(135deg, rgba(226, 184, 115, 0.35), rgba(212, 135, 62, 0.35));
+  }
+  .season__month--peak {
+    background: linear-gradient(135deg, var(--gold-bright), var(--amber));
+    box-shadow: 0 0 12px rgba(245, 193, 108, 0.4);
+  }
+  .season__labels {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 3px;
+    font-size: 0.625rem;
+    color: var(--stone);
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+  .season__label {
+    padding-top: 2px;
+  }
+  .season__label--active {
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .season__note {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--stone);
+    text-align: center;
+  }
+
+  /* --- How to spot it card --- */
+  .spot {
+    margin-top: 1.25rem;
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, rgba(245, 193, 108, 0.08), rgba(212, 135, 62, 0.05));
+    border: 1px solid rgba(226, 184, 115, 0.15);
+    border-radius: var(--radius-sm);
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .spot__icon {
+    flex-shrink: 0;
+    color: var(--gold);
+    opacity: 0.8;
+    margin-top: 2px;
+  }
+  .spot__content {
+    flex: 1;
+  }
+  .spot__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 0 0.25rem;
+  }
+  body.lang-ar .spot__label { letter-spacing: 0.04em; text-transform: none; }
+  .spot__text {
+    font-size: 0.875rem;
+    color: var(--cream-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* --- Models section --- */
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+  @media (max-width: 860px) {
+    .models-grid { grid-template-columns: 1fr; }
+  }
+
+  .model-card {
+    background: linear-gradient(135deg, rgba(23, 14, 50, 0.75), rgba(11, 12, 41, 0.8));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+  .model-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold-deep), transparent);
+    opacity: 0.6;
+  }
+  .model-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--gold-deep);
+    box-shadow: var(--shadow-deep);
+  }
+  .model-card__badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 0 0 0.75rem;
+  }
+  .model-card__name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.625rem;
+    font-weight: 600;
+    color: var(--cream);
+    margin: 0 0 0.375rem;
+    line-height: 1.1;
+  }
+  .model-card__arch {
+    font-size: 0.875rem;
+    color: var(--cream-muted);
+    margin: 0 0 1.25rem;
+    line-height: 1.55;
+  }
+  .model-card__acc {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--gold-bright);
+    margin: 0 0 0.375rem;
+  }
+  .model-card__acc-value {
+    font-size: 2.5rem;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .model-card__acc-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    color: var(--stone);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .ensemble-banner {
+    margin-top: 1.5rem;
+    padding: 1.5rem 1.75rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(226, 184, 115, 0.12), rgba(212, 135, 62, 0.08));
+    border: 1px solid var(--gold-deep);
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .ensemble-banner__text h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gold-bright);
+    margin: 0 0 0.25rem;
+  }
+  .ensemble-banner__text p {
+    font-size: 0.9375rem;
+    color: var(--cream-muted);
+    margin: 0;
+  }
+  .ensemble-banner__acc {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem;
+    font-weight: 600;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--gold-bright), var(--amber));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-variant-numeric: tabular-nums;
+  }
+  .ensemble-banner__acc sup { font-size: 0.5em; }
+
+  /* --- Feature space --- */
+  .tsne-frame {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(23, 14, 50, 0.6), rgba(11, 12, 41, 0.75));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-deep);
+  }
+  .tsne-frame img {
+    width: 100%;
+    border-radius: var(--radius-md);
+    background: white;
+  }
+
+  /* --- Varieties ribbon --- */
+  .varieties {
+    margin-top: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  .variety-chip {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    color: var(--cream-muted);
+    background: rgba(11, 12, 41, 0.4);
+    transition: var(--transition);
+  }
+  .variety-chip:hover {
+    border-color: var(--gold);
+    color: var(--gold-bright);
+    transform: translateY(-1px);
+  }
+
+  /* --- Loading --- */
+  .loading {
+    display: none;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--gold);
+    font-size: 0.875rem;
+    padding: 0.75rem 0;
+  }
+  .loading--shown { display: inline-flex; }
+  .loading__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(226, 184, 115, 0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .loading__spinner { animation: none; }
+  }
+
+  /* --- Error --- */
+  .error-toast {
+    display: none;
+    padding: 0.875rem 1.125rem;
+    border-radius: var(--radius-sm);
+    background: rgba(180, 50, 50, 0.15);
+    border: 1px solid rgba(220, 70, 70, 0.4);
+    color: #FFB5B5;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+  }
+  .error-toast--shown { display: block; }
+
+  /* --- Footer --- */
+  .footer {
+    border-top: 1px solid var(--glass-border);
+    padding: 3rem 1.25rem 2rem;
+    text-align: center;
+    color: var(--stone);
+    font-size: 0.875rem;
+    line-height: 1.65;
+    background: var(--ink);
+  }
+  .footer__brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.125rem;
+    color: var(--cream);
+    margin-bottom: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .footer__links {
+    display: flex;
+    gap: 1.25rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .footer__links a {
+    color: var(--cream-muted);
+    font-weight: 500;
+  }
+  .footer__attribution {
+    margin-top: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--stone-dim);
+  }
+
+  /* --- Reveal on scroll --- */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 700ms ease-out, transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* --- Section divider --- */
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--gold-deep);
+    opacity: 0.6;
+    margin: 0 auto;
+    max-width: 240px;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-deep));
+  }
+  .divider::after {
+    background: linear-gradient(270deg, transparent, var(--gold-deep));
+  }
+  .divider__mark {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 10px var(--gold);
+  }
+</style>
+</head>
+<body>
+
+<!-- ================== NAV ================== -->
+<nav class="nav" aria-label="Primary">
+  <a class="nav__brand" href="#top">
+    <span class="nav__brand-mark" aria-hidden="true"></span>
+    <span data-i18n="brand">Tamar&nbsp;&middot;&nbsp;Saudi Dates</span>
+  </a>
+  <div style="display:flex; align-items:center;">
+    <ul class="nav__links">
+      <li><a href="#classify" data-i18n="nav_classify">Classify</a></li>
+      <li><a href="#explain" data-i18n="nav_explain">Explain</a></li>
+      <li><a href="#models" data-i18n="nav_models">Models</a></li>
+    </ul>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button type="button" class="lang-switch__btn" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" class="lang-switch__btn ar" data-lang="ar" aria-pressed="false">ع</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ================== HERO ================== -->
+<header class="hero" id="top">
+  <div class="hero__stars" aria-hidden="true">
+    <!-- Stars scattered via JS; initial set for no-JS fallback -->
+    <span class="hero__star hero__star--lg" style="top:8%; left:12%; animation-delay:0s"></span>
+    <span class="hero__star" style="top:15%; left:28%; animation-delay:1.2s"></span>
+    <span class="hero__star hero__star--lg" style="top:22%; left:65%; animation-delay:0.5s"></span>
+    <span class="hero__star" style="top:10%; left:80%; animation-delay:2s"></span>
+    <span class="hero__star" style="top:30%; left:48%; animation-delay:2.8s"></span>
+    <span class="hero__star hero__star--lg" style="top:6%; left:42%; animation-delay:1.7s"></span>
+    <span class="hero__star" style="top:18%; left:88%; animation-delay:0.3s"></span>
+    <span class="hero__star" style="top:35%; left:15%; animation-delay:1.5s"></span>
+    <span class="hero__star" style="top:12%; left:55%; animation-delay:2.2s"></span>
+    <span class="hero__star" style="top:25%; left:92%; animation-delay:0.9s"></span>
+    <span class="hero__star hero__star--lg" style="top:40%; left:72%; animation-delay:3.1s"></span>
+    <span class="hero__star" style="top:5%; left:22%; animation-delay:2.5s"></span>
+    <span class="hero__star" style="top:28%; left:4%; animation-delay:1.0s"></span>
+    <span class="hero__star" style="top:45%; left:38%; animation-delay:1.8s"></span>
+    <span class="hero__star" style="top:13%; left:72%; animation-delay:0.7s"></span>
+  </div>
+
+  <!-- Crescent moon -->
+  <svg class="hero__moon" viewBox="0 0 100 100" aria-hidden="true">
+    <defs>
+      <radialGradient id="moonGrad" cx="30%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#FFF3D0" />
+        <stop offset="55%" stop-color="#F5C16C" />
+        <stop offset="100%" stop-color="#B98846" />
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="50" r="42" fill="url(#moonGrad)" />
+    <circle cx="42" cy="42" r="3" fill="#D49F5E" opacity="0.5" />
+    <circle cx="58" cy="58" r="2" fill="#D49F5E" opacity="0.4" />
+    <circle cx="50" cy="62" r="2.5" fill="#D49F5E" opacity="0.35" />
+  </svg>
+
+  <div class="hero__haze" aria-hidden="true"></div>
+
+  <!-- Palm tree silhouettes at horizon -->
+  <div class="hero__palms" aria-hidden="true">
+    <!-- Palm 1 -->
+    <svg class="hero__palm hero__palm--1" viewBox="0 0 140 300" preserveAspectRatio="xMidYMax meet">
+      <g fill="currentColor">
+        <path d="M 67 300 Q 64 240 66 180 Q 68 130 64 80 Q 62 65 68 55 L 76 55 Q 78 65 76 80 Q 74 130 76 180 Q 74 240 73 300 Z"/>
+        <g opacity="0.4" stroke="currentColor" stroke-width="1" fill="none">
+          <path d="M 62 260 Q 70 262 74 260" />
+          <path d="M 62 230 Q 70 232 74 230" />
+          <path d="M 63 200 Q 70 202 75 200" />
+          <path d="M 64 170 Q 70 172 76 170" />
+          <path d="M 64 140 Q 70 142 76 140" />
+          <path d="M 65 110 Q 70 112 76 110" />
+        </g>
+        <circle cx="70" cy="50" r="5"/>
+        <path d="M 70 50 Q 72 20 68 -5 Q 66 22 68 50 Z"/>
+        <path d="M 70 50 Q 95 22 125 18 Q 98 30 73 52 Z"/>
+        <path d="M 70 50 Q 115 42 140 62 Q 110 48 72 54 Z"/>
+        <path d="M 70 50 Q 108 70 130 96 Q 98 68 72 56 Z"/>
+        <path d="M 70 50 Q 45 22 15 18 Q 42 30 67 52 Z"/>
+        <path d="M 70 50 Q 25 42 0 62 Q 30 48 68 54 Z"/>
+        <path d="M 70 50 Q 32 70 10 96 Q 42 68 68 56 Z"/>
+        <path d="M 70 50 Q 85 25 92 5 Q 78 28 72 50 Z"/>
+        <path d="M 70 50 Q 55 25 48 5 Q 62 28 68 50 Z"/>
+      </g>
+    </svg>
+    <!-- Palm 2 (tallest, center-left) -->
+    <svg class="hero__palm hero__palm--2" viewBox="0 0 160 340" preserveAspectRatio="xMidYMax meet">
+      <g fill="currentColor">
+        <path d="M 76 340 Q 72 270 76 190 Q 80 130 74 70 Q 72 55 80 48 L 88 48 Q 92 55 88 70 Q 84 130 88 190 Q 86 270 83 340 Z"/>
+        <g opacity="0.4" stroke="currentColor" stroke-width="1" fill="none">
+          <path d="M 72 290 Q 80 292 86 290" />
+          <path d="M 72 258 Q 80 260 86 258" />
+          <path d="M 73 226 Q 80 228 87 226" />
+          <path d="M 74 194 Q 80 196 88 194" />
+          <path d="M 75 162 Q 82 164 89 162" />
+          <path d="M 76 130 Q 82 132 88 130" />
+          <path d="M 78 98 Q 82 100 86 98" />
+        </g>
+        <circle cx="82" cy="44" r="6"/>
+        <path d="M 82 44 Q 85 10 80 -18 Q 78 14 80 44 Z"/>
+        <path d="M 82 44 Q 110 14 145 10 Q 115 24 85 46 Z"/>
+        <path d="M 82 44 Q 130 36 160 58 Q 125 42 85 48 Z"/>
+        <path d="M 82 44 Q 124 66 150 95 Q 115 64 85 50 Z"/>
+        <path d="M 82 44 Q 54 14 15 10 Q 49 24 79 46 Z"/>
+        <path d="M 82 44 Q 32 36 0 58 Q 35 42 79 48 Z"/>
+        <path d="M 82 44 Q 40 66 14 95 Q 49 64 79 50 Z"/>
+        <path d="M 82 44 Q 100 18 110 -2 Q 92 20 84 44 Z"/>
+        <path d="M 82 44 Q 64 18 54 -2 Q 72 20 80 44 Z"/>
+      </g>
+    </svg>
+    <!-- Palm 3 -->
+    <svg class="hero__palm hero__palm--3" viewBox="0 0 140 280" preserveAspectRatio="xMidYMax meet">
+      <g fill="currentColor">
+        <path d="M 67 280 Q 64 220 66 160 Q 68 110 64 70 Q 62 58 68 48 L 76 48 Q 78 58 76 70 Q 74 110 76 160 Q 74 220 73 280 Z"/>
+        <g opacity="0.4" stroke="currentColor" stroke-width="1" fill="none">
+          <path d="M 62 240 Q 70 242 74 240" />
+          <path d="M 63 210 Q 70 212 75 210" />
+          <path d="M 64 180 Q 70 182 76 180" />
+          <path d="M 64 150 Q 70 152 76 150" />
+          <path d="M 65 120 Q 70 122 76 120" />
+          <path d="M 65 90 Q 70 92 76 90" />
+        </g>
+        <circle cx="70" cy="44" r="5"/>
+        <path d="M 70 44 Q 72 14 68 -10 Q 66 18 68 44 Z"/>
+        <path d="M 70 44 Q 95 18 125 14 Q 98 26 73 46 Z"/>
+        <path d="M 70 44 Q 115 38 140 56 Q 110 42 72 48 Z"/>
+        <path d="M 70 44 Q 108 62 130 88 Q 98 60 72 50 Z"/>
+        <path d="M 70 44 Q 45 18 15 14 Q 42 26 67 46 Z"/>
+        <path d="M 70 44 Q 25 38 0 56 Q 30 42 68 48 Z"/>
+        <path d="M 70 44 Q 32 62 10 88 Q 42 60 68 50 Z"/>
+      </g>
+    </svg>
+    <!-- Palm 4 -->
+    <svg class="hero__palm hero__palm--4" viewBox="0 0 140 310" preserveAspectRatio="xMidYMax meet">
+      <g fill="currentColor">
+        <path d="M 67 310 Q 65 250 67 190 Q 69 130 65 80 Q 63 65 69 56 L 77 56 Q 79 65 77 80 Q 75 130 77 190 Q 75 250 73 310 Z"/>
+        <g opacity="0.4" stroke="currentColor" stroke-width="1" fill="none">
+          <path d="M 63 270 Q 70 272 75 270" />
+          <path d="M 63 240 Q 70 242 76 240" />
+          <path d="M 64 210 Q 70 212 76 210" />
+          <path d="M 64 180 Q 70 182 76 180" />
+          <path d="M 64 150 Q 70 152 76 150" />
+          <path d="M 65 120 Q 70 122 76 120" />
+        </g>
+        <circle cx="71" cy="52" r="5"/>
+        <path d="M 71 52 Q 74 20 70 -6 Q 68 22 69 52 Z"/>
+        <path d="M 71 52 Q 96 22 126 18 Q 99 30 74 54 Z"/>
+        <path d="M 71 52 Q 116 44 138 64 Q 108 50 73 56 Z"/>
+        <path d="M 71 52 Q 110 72 130 98 Q 100 70 73 58 Z"/>
+        <path d="M 71 52 Q 46 22 16 18 Q 43 30 68 54 Z"/>
+        <path d="M 71 52 Q 26 44 4 64 Q 34 50 69 56 Z"/>
+        <path d="M 71 52 Q 34 72 12 98 Q 42 70 69 58 Z"/>
+        <path d="M 71 52 Q 85 28 90 8 Q 78 30 73 52 Z"/>
+        <path d="M 71 52 Q 57 28 52 8 Q 64 30 69 52 Z"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero__horizon" aria-hidden="true"></div>
+
+  <div class="hero__content">
+    <span class="hero__eyebrow" data-i18n="hero_eyebrow">Saudi Heritage &middot; Deep Learning</span>
+    <h1 class="hero__title" data-i18n-html="hero_title">Saudi Date <em>Variety</em> Classifier</h1>
+    <p class="hero__subtitle" data-i18n="hero_subtitle">
+      A photograph is all it takes. An ensemble of three deep-learning models &mdash;
+      ResNet, EfficientNet, and a Vision Transformer &mdash; identifies the variety,
+      shows where it looked, and tells the story of the cultivar.
+    </p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="#classify">
+        <span data-i18n="hero_try">Try the classifier</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a class="btn btn--ghost" href="#models" data-i18n="hero_meet">Meet the models</a>
+    </div>
+    <a class="hero__github" href="https://github.com/Rashidbm/saudi-date-classifier" target="_blank" rel="noopener" aria-label="GitHub">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+        <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.38 7.86 10.9.58.11.79-.25.79-.56v-2c-3.2.69-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.74.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.47.11-3.07 0 0 .97-.31 3.18 1.18a11.04 11.04 0 015.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.6.23 2.78.11 3.07.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.41-5.27 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56C20.22 21.37 23.5 17.08 23.5 12 23.5 5.73 18.27.5 12 .5z"/>
+      </svg>
+    </a>
+  </div>
+</header>
+
+<!-- ================== STATS ================== -->
+<div class="stats">
+  <div class="stat reveal">
+    <div class="stat__value">9</div>
+    <div class="stat__label" data-i18n="stat_varieties">Varieties</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat__value">3</div>
+    <div class="stat__label" data-i18n="stat_ensemble">Model Ensemble</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat__value">90.4<sup>%</sup></div>
+    <div class="stat__label" data-i18n="stat_accuracy">Test Accuracy</div>
+  </div>
+</div>
+
+<!-- ================== CLASSIFY ================== -->
+<section class="section" id="classify">
+  <div class="section__head reveal">
+    <span class="section__eyebrow" data-i18n="classify_eyebrow">Interactive</span>
+    <h2 class="section__title" data-i18n-html="classify_title">Upload a date, get its <em>variety</em></h2>
+    <p class="section__subtitle" data-i18n="classify_subtitle">
+      Drop an image or snap one with your camera. Works best on a single, centered date with good lighting.
+    </p>
+  </div>
+
+  <div class="classify-grid reveal">
+    <!-- Input panel -->
+    <div class="panel">
+      <p class="panel__label" data-i18n="step1_label">Step 1 &middot; Upload</p>
+      <label class="dropzone" id="dropzone" for="file" tabindex="0">
+        <input class="dropzone__input" id="file" name="file" type="file" accept="image/*" />
+        <div class="dropzone__content">
+          <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <p class="dropzone__title" data-i18n="dropzone_title">Drop an image or click to upload</p>
+          <p class="dropzone__hint" data-i18n="dropzone_hint">JPG, PNG, WEBP &middot; Up to 10 MB</p>
+        </div>
+        <img class="dropzone__preview" id="preview" alt="Selected date fruit" />
+        <span class="dropzone__replace">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          <span data-i18n="dropzone_replace">Click to replace</span>
+        </span>
+      </label>
+
+      <div class="controls">
+        <div class="field">
+          <label class="field__label" for="model" data-i18n="model_label">Model</label>
+          <select class="select" id="model" name="model">
+            <option value="ensemble" selected data-i18n="model_ensemble">Ensemble &middot; All three models</option>
+            <option value="vit" data-i18n="model_vit">Vision Transformer</option>
+            <option value="efficientnet" data-i18n="model_efficientnet">EfficientNet-B0</option>
+            <option value="resnet" data-i18n="model_resnet">ResNet-50</option>
+          </select>
+          <span class="field__hint" data-i18n="model_hint">The ensemble combines all three by averaging softmax outputs.</span>
+        </div>
+        <div class="loading" id="loading">
+          <span class="loading__spinner" aria-hidden="true"></span>
+          <span data-i18n="loading">Analyzing image&hellip;</span>
+        </div>
+        <div class="error-toast" id="error" role="alert"></div>
+      </div>
+    </div>
+
+    <!-- Result panel -->
+    <div class="panel">
+      <p class="panel__label" data-i18n="step2_label">Step 2 &middot; Result</p>
+      <div class="result result--empty" id="result-empty">
+        <div class="result__empty-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <p class="result__empty-title" data-i18n="empty_title">Awaiting your image</p>
+        <p class="result__empty-text" data-i18n="empty_text">The prediction, confidence breakdown, and heritage story will appear here.</p>
+      </div>
+      <div class="result" id="result" hidden>
+        <div class="result__header">
+          <p class="result__top-label" data-i18n="predicted_variety">Predicted Variety</p>
+          <h3 class="result__variety" id="variety">&mdash;</h3>
+          <p class="result__arabic" id="arabic"></p>
+          <div class="result__confidence">
+            <span class="result__confidence-text">
+              <strong id="confidence-pct">0.0%</strong> <span data-i18n="confidence">confidence</span>
+            </span>
+            <div class="result__bar" aria-hidden="true">
+              <div class="result__bar-fill" id="confidence-bar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        <ul class="conf-list" id="conf-list" aria-label="Top predictions"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================== EXPLAIN ================== -->
+<section class="section" id="explain">
+  <div class="section__head reveal">
+    <span class="section__eyebrow" data-i18n="explain_eyebrow">Explainability</span>
+    <h2 class="section__title" data-i18n-html="explain_title">See inside the <em>model</em></h2>
+    <p class="section__subtitle" data-i18n="explain_subtitle">
+      Deep learning is not a black box here. Grad-CAM highlights the regions that shaped the
+      prediction, and t-SNE projects the model's learned feature space into two dimensions.
+    </p>
+  </div>
+
+  <div class="explain-grid reveal">
+    <!-- Grad-CAM card -->
+    <div class="panel gradcam" id="gradcam-panel">
+      <p class="panel__label" data-i18n="gradcam_label">Grad-CAM &middot; Where the ViT looked</p>
+      <img class="gradcam__image" id="gradcam-image" alt="Grad-CAM heatmap" />
+      <p class="gradcam__caption" data-i18n="gradcam_caption">
+        Warm regions show where the Vision Transformer attended most when forming its prediction.
+        Upload an image above to see this per-image attention map.
+      </p>
+    </div>
+    <div class="panel gradcam gradcam--shown" id="gradcam-placeholder">
+      <p class="panel__label" data-i18n="gradcam_placeholder_label">Grad-CAM &middot; Model Attention</p>
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2rem 1rem; color:var(--stone); min-height:280px;">
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold-deep); opacity:0.7; margin-bottom:0.75rem;">
+          <circle cx="12" cy="12" r="4" /><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.93 19.07l1.41-1.41"/><path d="M17.66 6.34l1.41-1.41"/>
+        </svg>
+        <p style="font-family:'Cormorant Garamond',serif; font-size:1.25rem; color:var(--cream); margin:0 0 0.25rem; font-weight:500;" data-i18n="gradcam_empty_title">Upload to see attention</p>
+        <p style="font-size:0.875rem; color:var(--stone); margin:0; max-width:260px;" data-i18n="gradcam_empty_text">
+          Once you classify an image, Grad-CAM will overlay a heatmap showing the model's focus.
+        </p>
+      </div>
+    </div>
+
+    <!-- Heritage card -->
+    <div class="panel heritage" id="heritage">
+      <p class="panel__label" data-i18n="heritage_label">Heritage &middot; About this variety</p>
+      <h3 class="heritage__name" id="heritage-name">&mdash;</h3>
+      <div class="heritage__row">
+        <span class="heritage__label" data-i18n="heritage_region">Region</span>
+        <span class="heritage__value" id="heritage-region">&mdash;</span>
+      </div>
+      <div class="heritage__row">
+        <span class="heritage__label" data-i18n="heritage_description">Description</span>
+        <span class="heritage__value" id="heritage-description">&mdash;</span>
+      </div>
+      <div class="heritage__row">
+        <span class="heritage__label" data-i18n="heritage_flavor">Flavor</span>
+        <span class="heritage__value" id="heritage-flavor">&mdash;</span>
+      </div>
+      <div class="heritage__row">
+        <span class="heritage__label" data-i18n="heritage_significance">Significance</span>
+        <span class="heritage__value" id="heritage-significance">&mdash;</span>
+      </div>
+
+      <!-- Season strip -->
+      <div class="season" id="season">
+        <div class="season__head">
+          <p class="season__title" data-i18n="season_title">Season</p>
+          <p class="season__range" id="season-range">&mdash;</p>
+        </div>
+        <div class="season__strip" id="season-strip" aria-hidden="true"></div>
+        <div class="season__labels" id="season-labels"></div>
+        <p class="season__note" id="season-note"></p>
+      </div>
+
+      <!-- How to spot it -->
+      <div class="spot" id="spot">
+        <svg class="spot__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <div class="spot__content">
+          <p class="spot__label" data-i18n="spot_title">How to spot it</p>
+          <p class="spot__text" id="spot-text">&mdash;</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel heritage heritage--shown" id="heritage-placeholder">
+      <p class="panel__label" data-i18n="heritage_label">Heritage &middot; About this variety</p>
+      <div style="padding: 1rem 0;">
+        <h3 style="font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:var(--cream); margin:0 0 0.75rem; font-weight:500;" data-i18n="heritage_nine_title">Nine cultivars, nine stories</h3>
+        <p style="color:var(--cream-muted); font-size:0.9375rem; line-height:1.65; margin:0 0 1rem;" data-i18n="heritage_nine_text">
+          Each Saudi date variety carries its own terroir &mdash; the oasis it grew in, the flavor profile that
+          made it prized, and the role it plays in Saudi culture. Upload a date above to surface its story.
+        </p>
+        <div class="varieties">
+          <span class="variety-chip">Ajwa</span>
+          <span class="variety-chip">Sokari</span>
+          <span class="variety-chip">Medjool</span>
+          <span class="variety-chip">Galaxy</span>
+          <span class="variety-chip">Meneifi</span>
+          <span class="variety-chip">Nabtat Ali</span>
+          <span class="variety-chip">Rutab</span>
+          <span class="variety-chip">Shaishe</span>
+          <span class="variety-chip">Sugaey</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- t-SNE -->
+  <div class="section__head reveal" style="margin-top:5rem;">
+    <div class="divider"><span class="divider__mark"></span></div>
+    <span class="section__eyebrow" style="margin-top:2rem;" data-i18n="tsne_eyebrow">t-SNE Projection</span>
+    <h2 class="section__title" data-i18n-html="tsne_title">How the model <em>clusters</em> varieties</h2>
+    <p class="section__subtitle" data-i18n="tsne_subtitle">
+      A 2-D map of Vision Transformer embeddings on the test set. Each point is one image;
+      well-separated clusters mean the model has learned to distinguish varieties with clarity.
+    </p>
+  </div>
+
+  <div class="tsne-frame reveal">
+    <img src="/tsne.png" alt="t-SNE projection of Vision Transformer features across 9 Saudi date varieties" loading="lazy" />
+  </div>
+</section>
+
+<!-- ================== MODELS ================== -->
+<section class="section" id="models">
+  <div class="section__head reveal">
+    <span class="section__eyebrow" data-i18n="models_eyebrow">Architecture</span>
+    <h2 class="section__title" data-i18n-html="models_title">Three models, one <em>prediction</em></h2>
+    <p class="section__subtitle" data-i18n="models_subtitle">
+      Each architecture brings a distinct inductive bias. Their probabilities are averaged to
+      produce the ensemble, which outperforms any single model on the held-out test set.
+    </p>
+  </div>
+
+  <div class="models-grid reveal">
+    <article class="model-card">
+      <p class="model-card__badge" data-i18n="resnet_badge">CNN &middot; Deep Residual</p>
+      <h3 class="model-card__name">ResNet-50</h3>
+      <p class="model-card__arch" data-i18n="resnet_arch">
+        50-layer residual network. Skip connections let gradients flow through deep stacks,
+        making fine-grained texture features learnable.
+      </p>
+      <div class="model-card__acc">
+        <span class="model-card__acc-value">81.1<sup>%</sup></span>
+      </div>
+      <p class="model-card__acc-label" data-i18n="test_accuracy">Test accuracy</p>
+    </article>
+
+    <article class="model-card">
+      <p class="model-card__badge" data-i18n="efficientnet_badge">CNN &middot; Compound Scaling</p>
+      <h3 class="model-card__name">EfficientNet-B0</h3>
+      <p class="model-card__arch" data-i18n="efficientnet_arch">
+        Depth, width, and resolution scaled in harmony. Fewer parameters than ResNet but
+        sharper accuracy thanks to mobile inverted bottlenecks.
+      </p>
+      <div class="model-card__acc">
+        <span class="model-card__acc-value">85.9<sup>%</sup></span>
+      </div>
+      <p class="model-card__acc-label" data-i18n="test_accuracy">Test accuracy</p>
+    </article>
+
+    <article class="model-card">
+      <p class="model-card__badge" data-i18n="vit_badge">Transformer &middot; Self-Attention</p>
+      <h3 class="model-card__name">Vision Transformer</h3>
+      <p class="model-card__arch" data-i18n="vit_arch">
+        Treats the image as a sequence of patches. Self-attention captures long-range
+        dependencies &mdash; strong on subtle inter-variety differences.
+      </p>
+      <div class="model-card__acc">
+        <span class="model-card__acc-value">88.8<sup>%</sup></span>
+      </div>
+      <p class="model-card__acc-label" data-i18n="test_accuracy">Test accuracy</p>
+    </article>
+  </div>
+
+  <div class="ensemble-banner reveal">
+    <div class="ensemble-banner__text">
+      <h3 data-i18n="ensemble_title">Soft-voting ensemble</h3>
+      <p data-i18n="ensemble_text">Average the softmax probabilities of all three models. Wins on the held-out test set.</p>
+    </div>
+    <div class="ensemble-banner__acc">90.4<sup>%</sup></div>
+  </div>
+</section>
+
+<!-- ================== FOOTER ================== -->
+<footer class="footer">
+  <div class="footer__brand">
+    <span class="nav__brand-mark" aria-hidden="true"></span>
+    <span data-i18n="footer_brand">Saudi Date Variety Classifier</span>
+  </div>
+  <p data-i18n-html="footer_text">
+    Nine varieties &mdash; Ajwa, Galaxy, Medjool, Meneifi, Nabtat Ali, Rutab, Shaishe, Sokari, Sugaey.<br/>
+    Built with PyTorch, FastAPI, and the Kaggle Saudi-dates dataset.
+  </p>
+  <div class="footer__links">
+    <a href="https://huggingface.co/Rashidbm/saudi-date-classifier" target="_blank" rel="noopener" data-i18n="footer_weights">Model weights</a>
+    <a href="https://github.com/Rashidbm/saudi-date-classifier" target="_blank" rel="noopener" data-i18n="footer_github">GitHub</a>
+    <a href="#classify" data-i18n="footer_try">Try again</a>
+    <a href="#top" data-i18n="footer_top">Back to top</a>
+  </div>
+</footer>
+
+<script>
+  // Declared early to avoid TDZ when setLanguage re-renders on init
+  let lastData = null;
+  let currentLang = localStorage.getItem('lang') || 'en';
+
+  // Variety name → Arabic
+  const VARIETY_AR = {
+    "Ajwa": "عجوة",
+    "Galaxy": "قلاكسي",
+    "Medjool": "مجدول",
+    "Meneifi": "منيفي",
+    "Nabtat Ali": "نبتة علي",
+    "Rutab": "رطب",
+    "Shaishe": "شيشي",
+    "Sokari": "سكري",
+    "Sugaey": "صقعي",
+  };
+  function varietyName(name) {
+    if (currentLang === 'ar' && VARIETY_AR[name]) return VARIETY_AR[name];
+    return name;
+  }
+
+  // --- i18n ---
+  const TRANSLATIONS = {
+    en: {
+      brand: "Tamar · Saudi Dates",
+      nav_classify: "Classify",
+      nav_explain: "Explain",
+      nav_models: "Models",
+      hero_eyebrow: "Saudi Heritage · Deep Learning",
+      hero_title: 'Saudi Date <em>Variety</em> Classifier',
+      hero_subtitle: "A photograph is all it takes. An ensemble of three deep-learning models — ResNet, EfficientNet, and a Vision Transformer — identifies the variety, shows where it looked, and tells the story of the cultivar.",
+      hero_try: "Try the classifier",
+      hero_meet: "Meet the models",
+      stat_varieties: "Varieties",
+      stat_ensemble: "Model Ensemble",
+      stat_accuracy: "Test Accuracy",
+      classify_eyebrow: "Interactive",
+      classify_title: 'Upload a date, get its <em>variety</em>',
+      classify_subtitle: "Drop an image or snap one with your camera. Works best on a single, centered date with good lighting.",
+      step1_label: "Step 1 · Upload",
+      step2_label: "Step 2 · Result",
+      dropzone_title: "Drop an image or click to upload",
+      dropzone_hint: "JPG, PNG, WEBP · Up to 10 MB",
+      dropzone_replace: "Click to replace",
+      model_label: "Model",
+      model_ensemble: "Ensemble · All three models",
+      model_vit: "Vision Transformer",
+      model_efficientnet: "EfficientNet-B0",
+      model_resnet: "ResNet-50",
+      model_hint: "The ensemble combines all three by averaging softmax outputs.",
+      loading: "Analyzing image…",
+      empty_title: "Awaiting your image",
+      empty_text: "The prediction, confidence breakdown, and heritage story will appear here.",
+      predicted_variety: "Predicted Variety",
+      confidence: "confidence",
+      explain_eyebrow: "Explainability",
+      explain_title: 'See inside the <em>model</em>',
+      explain_subtitle: "Deep learning is not a black box here. Grad-CAM highlights the regions that shaped the prediction, and t-SNE projects the model's learned feature space into two dimensions.",
+      gradcam_label: "Grad-CAM · Where the ViT looked",
+      gradcam_caption: "Warm regions show where the Vision Transformer attended most when forming its prediction. Upload an image above to see this per-image attention map.",
+      gradcam_placeholder_label: "Grad-CAM · Model Attention",
+      gradcam_empty_title: "Upload to see attention",
+      gradcam_empty_text: "Once you classify an image, Grad-CAM will overlay a heatmap showing the model's focus.",
+      heritage_label: "Heritage · About this variety",
+      heritage_region: "Region",
+      heritage_description: "Description",
+      heritage_flavor: "Flavor",
+      heritage_significance: "Significance",
+      heritage_nine_title: "Nine cultivars, nine stories",
+      heritage_nine_text: "Each Saudi date variety carries its own terroir — the oasis it grew in, the flavor profile that made it prized, and the role it plays in Saudi culture. Upload a date above to surface its story.",
+      season_title: "Harvest Season",
+      spot_title: "How to spot it",
+      peak_in: "Peak in",
+      month_1: "Jan", month_2: "Feb", month_3: "Mar", month_4: "Apr",
+      month_5: "May", month_6: "Jun", month_7: "Jul", month_8: "Aug",
+      month_9: "Sep", month_10: "Oct", month_11: "Nov", month_12: "Dec",
+      tsne_eyebrow: "t-SNE Projection",
+      tsne_title: 'How the model <em>clusters</em> varieties',
+      tsne_subtitle: "A 2-D map of Vision Transformer embeddings on the test set. Each point is one image; well-separated clusters mean the model has learned to distinguish varieties with clarity.",
+      models_eyebrow: "Architecture",
+      models_title: 'Three models, one <em>prediction</em>',
+      models_subtitle: "Each architecture brings a distinct inductive bias. Their probabilities are averaged to produce the ensemble, which outperforms any single model on the held-out test set.",
+      resnet_badge: "CNN · Deep Residual",
+      resnet_arch: "50-layer residual network. Skip connections let gradients flow through deep stacks, making fine-grained texture features learnable.",
+      efficientnet_badge: "CNN · Compound Scaling",
+      efficientnet_arch: "Depth, width, and resolution scaled in harmony. Fewer parameters than ResNet but sharper accuracy thanks to mobile inverted bottlenecks.",
+      vit_badge: "Transformer · Self-Attention",
+      vit_arch: "Treats the image as a sequence of patches. Self-attention captures long-range dependencies — strong on subtle inter-variety differences.",
+      test_accuracy: "Test accuracy",
+      ensemble_title: "Soft-voting ensemble",
+      ensemble_text: "Average the softmax probabilities of all three models. Wins on the held-out test set.",
+      footer_brand: "Saudi Date Variety Classifier",
+      footer_text: "Nine varieties — Ajwa, Galaxy, Medjool, Meneifi, Nabtat Ali, Rutab, Shaishe, Sokari, Sugaey.<br/>Built with PyTorch, FastAPI, and the Kaggle Saudi-dates dataset.",
+      footer_github: "GitHub",
+      footer_weights: "Model weights",
+      footer_try: "Try again",
+      footer_top: "Back to top",
+      error_invalid_image: "Please select an image file (JPG, PNG, WEBP).",
+      error_too_large: "Image is larger than 10 MB. Please choose a smaller file.",
+      error_failed: "Prediction failed. Is the server running?",
+    },
+    ar: {
+      brand: "تمر · سعودية",
+      nav_classify: "التصنيف",
+      nav_explain: "التفسير",
+      nav_models: "النماذج",
+      hero_eyebrow: "تراث · ذكاء",
+      hero_title: 'تعرّف على <em>تمرك</em>',
+      hero_subtitle: "صورة تكفي. ثلاثة نماذج تتعرّف على الصنف، تكشف ما نظرت إليه، وتروي حكايته.",
+      hero_try: "جرّب الآن",
+      hero_meet: "النماذج",
+      stat_varieties: "صنف",
+      stat_ensemble: "نماذج",
+      stat_accuracy: "دقّة",
+      classify_eyebrow: "تفاعلي",
+      classify_title: 'صورة. <em>صنف</em>.',
+      classify_subtitle: "اسحب صورة أو التقطها بالكاميرا. النتيجة أفضل مع تمرة واحدة في وسط الإطار وإضاءة جيدة.",
+      step1_label: "١ · الصورة",
+      step2_label: "٢ · النتيجة",
+      dropzone_title: "اسحب صورة أو انقر للاختيار",
+      dropzone_hint: "JPG · PNG · WEBP — حتى ١٠ ميغابايت",
+      dropzone_replace: "استبدال",
+      model_label: "النموذج",
+      model_ensemble: "المجمّع · النماذج الثلاثة",
+      model_vit: "محوّل الرؤية",
+      model_efficientnet: "EfficientNet-B0",
+      model_resnet: "ResNet-50",
+      model_hint: "النموذج المجمّع يأخذ معدّل احتمالات النماذج الثلاثة.",
+      loading: "يحلّل الصورة…",
+      empty_title: "بانتظار صورتك",
+      empty_text: "التوقّع، ومستوى الثقة، وحكاية الصنف ستظهر هنا.",
+      predicted_variety: "الصنف",
+      confidence: "ثقة",
+      explain_eyebrow: "الشفافية",
+      explain_title: 'داخل <em>النموذج</em>',
+      explain_subtitle: "لا صناديق سوداء. Grad-CAM يُبرز ما صنع القرار، و t-SNE يعرض ما تعلّمه النموذج في بُعدين.",
+      gradcam_label: "Grad-CAM · أين نظر",
+      gradcam_caption: "المناطق الدافئة تكشف ما ركّز عليه المحوّل. ارفع صورة بالأعلى لترى خريطة الانتباه.",
+      gradcam_placeholder_label: "Grad-CAM · الانتباه",
+      gradcam_empty_title: "ارفع صورة لترى ما نظر إليه",
+      gradcam_empty_text: "بعد التصنيف، ستظهر خريطة حراريّة تكشف تركيز النموذج.",
+      heritage_label: "الحكاية",
+      heritage_region: "المنطقة",
+      heritage_description: "الوصف",
+      heritage_flavor: "المذاق",
+      heritage_significance: "المكانة",
+      heritage_nine_title: "تسعة، لكلٍّ حكاية",
+      heritage_nine_text: "كلّ تمرة تحمل واحتها، ومذاقها، وحضورها في البيت السعودي. ارفع صورة لتستحضر قصّتها.",
+      season_title: "موسم الحصاد",
+      spot_title: "كيف تميّزها",
+      peak_in: "الذروة في",
+      month_1: "يناير", month_2: "فبراير", month_3: "مارس", month_4: "أبريل",
+      month_5: "مايو", month_6: "يونيو", month_7: "يوليو", month_8: "أغسطس",
+      month_9: "سبتمبر", month_10: "أكتوبر", month_11: "نوفمبر", month_12: "ديسمبر",
+      tsne_eyebrow: "إسقاط t-SNE",
+      tsne_title: 'كيف <em>يُفرّق</em> النموذج',
+      tsne_subtitle: "خريطة ثنائية الأبعاد لما تعلّمه المحوّل. كل نقطة صورة؛ تباعد المجموعات يعني أن النموذج يميّز بوضوح.",
+      models_eyebrow: "البنية",
+      models_title: 'ثلاثة نماذج، <em>توقّع</em> واحد',
+      models_subtitle: "لكلّ نموذج منظوره. نأخذ معدّل احتمالاتهم لنصنع مجمّعًا يتفوّق على أيّ منها.",
+      resnet_badge: "شبكة عميقة",
+      resnet_arch: "شبكة من ٥٠ طبقة بوصلات تجاوز تسمح للتدرّج بالمرور عبر العمق، فتلتقط ملامح القوام الدقيقة.",
+      efficientnet_badge: "تدرّج متناغم",
+      efficientnet_arch: "عمق وعرض ودقّة تتدرّج معًا. معاملات أقل من ResNet ودقّة أعلى.",
+      vit_badge: "انتباه ذاتي",
+      vit_arch: "يعامل الصورة كسلسلة رُقع. الانتباه الذاتي يلتقط الترابط البعيد — قويّ في الفوارق الدقيقة.",
+      test_accuracy: "دقّة الاختبار",
+      ensemble_title: "تصويت الاحتمالات",
+      ensemble_text: "معدّل احتمالات النماذج الثلاثة. يفوز على مجموعة الاختبار.",
+      footer_brand: "مُصنِّف التمر السعودي",
+      footer_text: "تسعة أصناف — عجوة، قلاكسي، مجدول، منيفي، نبتة علي، رطب، شيشي، سكري، صقعي.<br/>مبنيّ بـ PyTorch و FastAPI ومجموعة بيانات التمور على Kaggle.",
+      footer_github: "غيت هَب",
+      footer_weights: "أوزان النماذج",
+      footer_try: "جرّب مرّة أخرى",
+      footer_top: "للأعلى",
+      error_invalid_image: "اختر ملف صورة (JPG أو PNG أو WEBP).",
+      error_too_large: "الصورة أكبر من ١٠ ميغابايت. اختر ملفًا أصغر.",
+      error_failed: "فشل التوقّع. تأكّد من تشغيل الخادم.",
+    },
+  };
+
+  function applyTranslations(lang) {
+    const dict = TRANSLATIONS[lang];
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key] !== undefined) el.textContent = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-html');
+      if (dict[key] !== undefined) el.innerHTML = dict[key];
+    });
+  }
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('lang', lang);
+    document.body.classList.toggle('lang-ar', lang === 'ar');
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    applyTranslations(lang);
+    // Update switch button state
+    document.querySelectorAll('.lang-switch__btn').forEach((b) => {
+      b.setAttribute('aria-pressed', b.getAttribute('data-lang') === lang ? 'true' : 'false');
+    });
+    // Re-render last prediction so heritage/season/spot swap languages
+    if (lastData && typeof renderResult === 'function') {
+      renderResult(lastData);
+    }
+  }
+
+  // Wire up language switcher
+  document.querySelectorAll('.lang-switch__btn').forEach((btn) => {
+    btn.addEventListener('click', () => setLanguage(btn.getAttribute('data-lang')));
+  });
+
+  // Apply initial language
+  setLanguage(currentLang);
+
+  // --- Elements ---
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file');
+  const preview = document.getElementById('preview');
+  const modelSelect = document.getElementById('model');
+  const loading = document.getElementById('loading');
+  const errorToast = document.getElementById('error');
+
+  const resultEmpty = document.getElementById('result-empty');
+  const resultBox = document.getElementById('result');
+
+  const varietyEl = document.getElementById('variety');
+  const arabicEl = document.getElementById('arabic');
+  const confPctEl = document.getElementById('confidence-pct');
+  const confBarEl = document.getElementById('confidence-bar');
+  const confListEl = document.getElementById('conf-list');
+
+  const gradcamPanel = document.getElementById('gradcam-panel');
+  const gradcamPlaceholder = document.getElementById('gradcam-placeholder');
+  const gradcamImg = document.getElementById('gradcam-image');
+
+  const heritagePanel = document.getElementById('heritage');
+  const heritagePlaceholder = document.getElementById('heritage-placeholder');
+  const heritageName = document.getElementById('heritage-name');
+  const heritageRegion = document.getElementById('heritage-region');
+  const heritageDescription = document.getElementById('heritage-description');
+  const heritageFlavor = document.getElementById('heritage-flavor');
+  const heritageSignificance = document.getElementById('heritage-significance');
+  const seasonStrip = document.getElementById('season-strip');
+  const seasonLabels = document.getElementById('season-labels');
+  const seasonRange = document.getElementById('season-range');
+  const seasonNote = document.getElementById('season-note');
+  const spotText = document.getElementById('spot-text');
+
+  let lastFile = null;
+  // lastData is declared at the top of this script
+
+  // --- Dropzone interactions ---
+  function openFileDialog() { fileInput.click(); }
+  dropzone.addEventListener('click', (e) => {
+    // Don't open dialog if user clicked on the preview image with a file loaded
+    if (e.target.tagName === 'INPUT') return;
+    openFileDialog();
+  });
+  dropzone.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFileDialog(); }
+  });
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dropzone--active');
+  });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dropzone--active'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dropzone--active');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+  });
+  modelSelect.addEventListener('change', () => {
+    if (lastFile) classify(lastFile);
+  });
+
+  function showError(message) {
+    errorToast.textContent = message;
+    errorToast.classList.add('error-toast--shown');
+    setTimeout(() => errorToast.classList.remove('error-toast--shown'), 5000);
+  }
+
+  async function handleFile(file) {
+    const t = TRANSLATIONS[currentLang];
+    if (!file.type.startsWith('image/')) {
+      showError(t.error_invalid_image);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showError(t.error_too_large);
+      return;
+    }
+    lastFile = file;
+    // Show preview
+    const url = URL.createObjectURL(file);
+    preview.src = url;
+    dropzone.classList.add('dropzone--has-preview');
+    await classify(file);
+  }
+
+  async function classify(file) {
+    errorToast.classList.remove('error-toast--shown');
+    loading.classList.add('loading--shown');
+
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('model', modelSelect.value);
+
+    try {
+      const res = await fetch('/api/predict', { method: 'POST', body: fd });
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || `Server returned ${res.status}`);
+      }
+      const data = await res.json();
+      renderResult(data);
+    } catch (err) {
+      console.error(err);
+      showError(TRANSLATIONS[currentLang].error_failed);
+    } finally {
+      loading.classList.remove('loading--shown');
+    }
+  }
+
+  function renderSeason(h) {
+    const t = TRANSLATIONS[currentLang];
+    const start = h.season_start;
+    const end = h.season_end;
+    const peak = h.peak_month;
+
+    if (!start || !end) {
+      document.getElementById('season').style.display = 'none';
+      return;
+    }
+    document.getElementById('season').style.display = '';
+
+    // Build 12-month strip
+    const strip = [];
+    const labels = [];
+    for (let m = 1; m <= 12; m++) {
+      const inSeason = (start <= end) ? (m >= start && m <= end) : (m >= start || m <= end);
+      const isPeak = m === peak;
+      let cls = 'season__month';
+      if (isPeak) cls += ' season__month--peak';
+      else if (inSeason) cls += ' season__month--active';
+      strip.push(`<div class="${cls}" title="${t['month_' + m]}"></div>`);
+      const labCls = inSeason ? 'season__label season__label--active' : 'season__label';
+      // Short month labels (first 3 chars / Arabic full but compact)
+      const label = currentLang === 'ar' ? t['month_' + m].slice(0, 3) : t['month_' + m];
+      labels.push(`<div class="${labCls}">${label}</div>`);
+    }
+    seasonStrip.innerHTML = strip.join('');
+    seasonLabels.innerHTML = labels.join('');
+
+    const startLabel = t['month_' + start];
+    const endLabel = t['month_' + end];
+    const peakLabel = peak ? t['month_' + peak] : '';
+    seasonRange.textContent = `${startLabel} → ${endLabel}`;
+    seasonNote.textContent = peak ? `${t.peak_in} ${peakLabel}` : '';
+  }
+
+  function renderResult(data) {
+    lastData = data;
+    const lang = currentLang;
+    const t = TRANSLATIONS[lang];
+
+    // Reveal result box, hide empty
+    resultEmpty.style.display = 'none';
+    resultBox.hidden = false;
+
+    // Top prediction - show Arabic as primary when lang=ar, English as secondary
+    const arabic = (data.heritage && data.heritage.arabic) || VARIETY_AR[data.variety] || '';
+    if (lang === 'ar' && arabic) {
+      varietyEl.textContent = arabic;
+      arabicEl.textContent = data.variety;  // show English as secondary
+      arabicEl.style.display = 'block';
+      arabicEl.style.direction = 'ltr';
+      arabicEl.style.fontFamily = "'Cormorant Garamond', serif";
+    } else {
+      varietyEl.textContent = data.variety;
+      arabicEl.textContent = arabic;
+      arabicEl.style.display = arabic ? 'block' : 'none';
+      arabicEl.style.direction = 'rtl';
+      arabicEl.style.fontFamily = "'ThmanyahSerif', 'Cormorant Garamond', serif";
+    }
+    const pct = (data.confidence * 100);
+    confPctEl.textContent = pct.toFixed(1) + '%';
+    confBarEl.style.width = '0%';
+    requestAnimationFrame(() => {
+      confBarEl.style.width = pct.toFixed(1) + '%';
+    });
+
+    // Top-5 confidence list
+    const sorted = Object.entries(data.confidences).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    confListEl.innerHTML = sorted.map(([name, val], i) => {
+      const width = (val * 100).toFixed(1);
+      const cls = i === 0 ? 'conf-row conf-row--top' : 'conf-row';
+      const displayName = varietyName(name);
+      return `<li class="${cls}">
+        <span class="conf-row__name">${displayName}</span>
+        <div class="conf-row__bar"><div style="width: ${width}%"></div></div>
+        <span class="conf-row__pct">${width}%</span>
+      </li>`;
+    }).join('');
+
+    // Grad-CAM
+    if (data.gradcam) {
+      gradcamImg.src = data.gradcam;
+      gradcamPanel.classList.add('gradcam--shown');
+      gradcamPlaceholder.style.display = 'none';
+    }
+
+    // Heritage - pick Arabic or English fields based on current language
+    const h = data.heritage || {};
+    if (h && Object.keys(h).length > 0) {
+      if (lang === 'ar') {
+        heritageName.textContent = arabic ? arabic + '  \u2014  ' + data.variety : data.variety;
+      } else {
+        heritageName.textContent = data.variety + (arabic ? '  \u2014  ' + arabic : '');
+      }
+      heritageRegion.textContent = h.region || '—';
+      const useAr = lang === 'ar';
+      heritageDescription.textContent = (useAr && h.description_ar) ? h.description_ar : (h.description || '—');
+      heritageFlavor.textContent = (useAr && h.flavor_ar) ? h.flavor_ar : (h.flavor || '—');
+      heritageSignificance.textContent = (useAr && h.significance_ar) ? h.significance_ar : (h.significance || '—');
+      spotText.textContent = (useAr && h.distinguish_ar) ? h.distinguish_ar : (h.distinguish || '—');
+      renderSeason(h);
+      heritagePanel.classList.add('heritage--shown');
+      heritagePlaceholder.style.display = 'none';
+    }
+  }
+
+  // --- Extra stars sprinkled via JS for density ---
+  (function sprinkleStars() {
+    const container = document.querySelector('.hero__stars');
+    if (!container) return;
+    const count = window.innerWidth < 768 ? 12 : 24;
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('span');
+      s.className = 'hero__star' + (Math.random() > 0.75 ? ' hero__star--lg' : '');
+      s.style.top = (Math.random() * 50) + '%';
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.animationDelay = (Math.random() * 4).toFixed(2) + 's';
+      container.appendChild(s);
+    }
+  })();
+
+  // --- Reveal on scroll ---
+  (function setupReveal() {
+    const els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach((el) => el.classList.add('reveal--visible'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal--visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+    els.forEach((el) => io.observe(el));
+  })();
+</script>
+</body>
+</html>
