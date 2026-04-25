@@ -1029,6 +1029,96 @@
     margin: 0;
   }
 
+  /* --- Almanac calendar --- */
+  .calendar {
+    max-width: 920px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, rgba(23, 14, 50, 0.5), rgba(11, 12, 41, 0.6));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 1.75rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  @media (max-width: 720px) {
+    .calendar { padding: 1rem 0.875rem; }
+  }
+  .calendar__months {
+    display: grid;
+    grid-template-columns: 110px repeat(12, 1fr);
+    gap: 4px;
+    align-items: end;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 0.5rem;
+  }
+  .calendar__months > :first-child { /* corner cell */ }
+  .calendar__month-label {
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--stone);
+    letter-spacing: 0.05em;
+  }
+  .calendar__month-label--in {
+    color: var(--gold);
+  }
+  .calendar__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .calendar__row {
+    display: grid;
+    grid-template-columns: 110px repeat(12, 1fr);
+    gap: 4px;
+    align-items: center;
+    padding: 6px 0;
+    transition: var(--transition);
+  }
+  .calendar__row:hover { background: rgba(226, 184, 115, 0.04); }
+  .calendar__name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem;
+    color: var(--cream);
+    padding-inline-end: 0.75rem;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body.lang-ar .calendar__name {
+    font-family: 'ThmanyahSerif', Georgia, serif;
+    font-size: 1.05rem;
+  }
+  .calendar__cell {
+    height: 14px;
+    background: rgba(226, 184, 115, 0.05);
+    border-radius: 3px;
+    transition: var(--transition);
+  }
+  .calendar__cell--in {
+    background: linear-gradient(135deg, rgba(226, 184, 115, 0.3), rgba(212, 135, 62, 0.3));
+  }
+  .calendar__cell--peak {
+    background: linear-gradient(135deg, var(--gold-bright), var(--amber));
+    box-shadow: 0 0 10px rgba(245, 193, 108, 0.45);
+  }
+  .calendar__row:hover .calendar__cell--in {
+    background: linear-gradient(135deg, rgba(226, 184, 115, 0.5), rgba(212, 135, 62, 0.5));
+  }
+  @media (max-width: 720px) {
+    .calendar__months,
+    .calendar__row {
+      grid-template-columns: 80px repeat(12, 1fr);
+      gap: 2px;
+    }
+    .calendar__name { font-size: 0.875rem; padding-inline-end: 0.4rem; }
+    body.lang-ar .calendar__name { font-size: 0.875rem; }
+    .calendar__month-label { font-size: 0.55rem; letter-spacing: 0.02em; }
+    .calendar__cell { height: 12px; }
+  }
+
   /* --- Models section --- */
   .models-grid {
     display: grid;
@@ -1309,6 +1399,7 @@
     <ul class="nav__links">
       <li><a href="#classify" data-i18n="nav_classify">Classify</a></li>
       <li><a href="#explain" data-i18n="nav_explain">Explain</a></li>
+      <li><a href="#calendar" data-i18n="nav_calendar">Calendar</a></li>
       <li><a href="#models" data-i18n="nav_models">Models</a></li>
     </ul>
     <div class="lang-switch" role="group" aria-label="Language">
@@ -1667,15 +1758,15 @@
           made it prized, and the role it plays in Saudi culture. Upload a date above to surface its story.
         </p>
         <div class="varieties">
-          <span class="variety-chip">Ajwa</span>
-          <span class="variety-chip">Sokari</span>
-          <span class="variety-chip">Medjool</span>
-          <span class="variety-chip">Galaxy</span>
-          <span class="variety-chip">Meneifi</span>
-          <span class="variety-chip">Nabtat Ali</span>
-          <span class="variety-chip">Rutab</span>
-          <span class="variety-chip">Shaishe</span>
-          <span class="variety-chip">Sugaey</span>
+          <span class="variety-chip" data-variety="Ajwa">Ajwa</span>
+          <span class="variety-chip" data-variety="Sokari">Sokari</span>
+          <span class="variety-chip" data-variety="Medjool">Medjool</span>
+          <span class="variety-chip" data-variety="Galaxy">Galaxy</span>
+          <span class="variety-chip" data-variety="Meneifi">Meneifi</span>
+          <span class="variety-chip" data-variety="Nabtat Ali">Nabtat Ali</span>
+          <span class="variety-chip" data-variety="Rutab">Rutab</span>
+          <span class="variety-chip" data-variety="Shaishe">Shaishe</span>
+          <span class="variety-chip" data-variety="Sugaey">Sugaey</span>
         </div>
       </div>
     </div>
@@ -1694,6 +1785,23 @@
 
   <div class="tsne-frame reveal">
     <img src="/tsne.png" alt="t-SNE projection of Vision Transformer features across 9 Saudi date varieties" loading="lazy" />
+  </div>
+</section>
+
+<!-- ================== CALENDAR ================== -->
+<section class="section" id="calendar">
+  <div class="section__head reveal">
+    <span class="section__eyebrow" data-i18n="calendar_eyebrow">Almanac</span>
+    <h2 class="section__title" data-i18n-html="calendar_title">When each variety is in <em>season</em></h2>
+    <p class="section__subtitle" data-i18n="calendar_subtitle">
+      Saudi date harvests stretch from July through November. Hover or tap a variety
+      to see its window. The brighter cell marks peak month.
+    </p>
+  </div>
+
+  <div class="calendar reveal" id="calendar-grid">
+    <div class="calendar__months" id="calendar-months"></div>
+    <div class="calendar__rows" id="calendar-rows"></div>
   </div>
 </section>
 
@@ -1793,6 +1901,19 @@
     "Sokari": "سكري",
     "Sugaey": "صقعي",
   };
+
+  // Variety seasons (start, end, peak) — kept in sync with src/utils.py
+  const VARIETY_SEASONS = {
+    "Rutab":     { start: 7, end: 9,  peak: 8  },
+    "Sokari":    { start: 7, end: 9,  peak: 8  },
+    "Sugaey":    { start: 7, end: 9,  peak: 8  },
+    "Ajwa":      { start: 8, end: 10, peak: 9  },
+    "Galaxy":    { start: 8, end: 10, peak: 9  },
+    "Meneifi":   { start: 8, end: 10, peak: 9  },
+    "Shaishe":   { start: 9, end: 10, peak: 9  },
+    "Nabtat Ali":{ start: 9, end: 10, peak: 9  },
+    "Medjool":   { start: 9, end: 11, peak: 10 },
+  };
   function varietyName(name) {
     if (currentLang === 'ar' && VARIETY_AR[name]) return VARIETY_AR[name];
     return name;
@@ -1804,6 +1925,7 @@
       brand: "Tamar · Saudi Dates",
       nav_classify: "Classify",
       nav_explain: "Explain",
+      nav_calendar: "Calendar",
       nav_models: "Models",
       hero_eyebrow: "Saudi Heritage · Deep Learning",
       hero_title: 'Saudi Date <em>Variety</em> Classifier',
@@ -1850,6 +1972,9 @@
       season_title: "Harvest Season",
       spot_title: "How to spot it",
       peak_in: "Peak in",
+      calendar_eyebrow: "Almanac",
+      calendar_title: 'When each variety is in <em>season</em>',
+      calendar_subtitle: "Saudi date harvests stretch from July through November. Hover a variety to see its window. The brighter cell marks peak month.",
       month_1: "Jan", month_2: "Feb", month_3: "Mar", month_4: "Apr",
       month_5: "May", month_6: "Jun", month_7: "Jul", month_8: "Aug",
       month_9: "Sep", month_10: "Oct", month_11: "Nov", month_12: "Dec",
@@ -1882,6 +2007,7 @@
       brand: "تمر · سعودية",
       nav_classify: "التصنيف",
       nav_explain: "التفسير",
+      nav_calendar: "التقويم",
       nav_models: "النماذج",
       hero_eyebrow: "تراث · ذكاء",
       hero_title: 'تعرّف على <em>تمرك</em>',
@@ -1928,6 +2054,9 @@
       season_title: "موسم الحصاد",
       spot_title: "كيف تميّزها",
       peak_in: "الذروة في",
+      calendar_eyebrow: "تقويم التمور",
+      calendar_title: 'متى ينضج كلّ <em>صنف</em>',
+      calendar_subtitle: "موسم التمور السعودية يمتدّ من يوليو حتى نوفمبر. مرّر فوق صنف لترى نافذته. الخليّة الأكثر إشراقًا تشير إلى ذروة النضج.",
       month_1: "يناير", month_2: "فبراير", month_3: "مارس", month_4: "أبريل",
       month_5: "مايو", month_6: "يونيو", month_7: "يوليو", month_8: "أغسطس",
       month_9: "سبتمبر", month_10: "أكتوبر", month_11: "نوفمبر", month_12: "ديسمبر",
@@ -1977,6 +2106,13 @@
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     applyTranslations(lang);
+    // Translate variety chips
+    document.querySelectorAll('[data-variety]').forEach((el) => {
+      const en = el.getAttribute('data-variety');
+      el.textContent = (lang === 'ar' && VARIETY_AR[en]) ? VARIETY_AR[en] : en;
+    });
+    // Re-render almanac calendar
+    if (typeof buildCalendar === 'function') buildCalendar();
     // Update switch button state
     document.querySelectorAll('.lang-switch__btn').forEach((b) => {
       b.setAttribute('aria-pressed', b.getAttribute('data-lang') === lang ? 'true' : 'false');
@@ -1985,6 +2121,52 @@
     if (lastData && typeof renderResult === 'function') {
       renderResult(lastData);
     }
+  }
+
+  // Build the almanac calendar (12 months × varieties)
+  function buildCalendar() {
+    const monthsRow = document.getElementById('calendar-months');
+    const rowsWrap = document.getElementById('calendar-rows');
+    if (!monthsRow || !rowsWrap) return;
+
+    const t = TRANSLATIONS[currentLang];
+    const lang = currentLang;
+
+    // Header row: blank corner + 12 month labels
+    let monthsHtml = '<div></div>';
+    // Determine which months are "in season" overall (any variety active)
+    const monthHasVariety = new Array(13).fill(false);
+    Object.values(VARIETY_SEASONS).forEach((s) => {
+      for (let m = s.start; m <= s.end; m++) monthHasVariety[m] = true;
+    });
+    for (let m = 1; m <= 12; m++) {
+      const fullName = t['month_' + m] || '';
+      const short = lang === 'ar' ? fullName.slice(0, 3) : fullName.slice(0, 1);
+      const cls = monthHasVariety[m] ? 'calendar__month-label calendar__month-label--in' : 'calendar__month-label';
+      monthsHtml += `<div class="${cls}" title="${fullName}">${short}</div>`;
+    }
+    monthsRow.innerHTML = monthsHtml;
+
+    // Sort varieties by start month, then peak
+    const varieties = Object.entries(VARIETY_SEASONS).sort((a, b) => {
+      if (a[1].start !== b[1].start) return a[1].start - b[1].start;
+      return a[1].peak - b[1].peak;
+    });
+
+    rowsWrap.innerHTML = varieties.map(([name, s]) => {
+      const display = (lang === 'ar' && VARIETY_AR[name]) ? VARIETY_AR[name] : name;
+      let cells = '';
+      for (let m = 1; m <= 12; m++) {
+        const inSeason = m >= s.start && m <= s.end;
+        const isPeak = m === s.peak;
+        let cls = 'calendar__cell';
+        if (isPeak) cls += ' calendar__cell--peak';
+        else if (inSeason) cls += ' calendar__cell--in';
+        const monthName = t['month_' + m] || '';
+        cells += `<div class="${cls}" title="${monthName}"></div>`;
+      }
+      return `<div class="calendar__row" title="${display}"><div class="calendar__name">${display}</div>${cells}</div>`;
+    }).join('');
   }
 
   // Wire up language switcher
