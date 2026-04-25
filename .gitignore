@@ -40,5 +40,6 @@ Thumbs.db
 *.log
 
 # Claude Code local config / skills
-.claude/
+.claude/*
+!.claude/skills/
 checkpoints/
